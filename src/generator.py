@@ -15,11 +15,17 @@ provided context from release notes, bug logs, and test cases. If the answer isn
 in the context, say clearly: "I don't have information about that in the provided documents."
 Do not use outside knowledge. Cite which item (e.g. BUG-447, TC-108) your answer is based on."""
 
-def generate_answer(query: str, chunks: list[str], chunk_embeddings) -> str:
-    """Retrieve relevant chunks and generate a grounded answer using Gemini."""
-    results = retrieve(query, chunks, chunk_embeddings, top_k=3)
-    context = "\n\n".join([f"[Score: {score:.2f}] {chunk}" for chunk, score in results])
+SIMILARITY_THRESHOLD = 0.3
 
+def generate_answer(query: str, chunks: list[str], chunk_embeddings) -> str:
+    """Retrieve relevant chunks and generate a grounded answer, or decline if nothing relevant is found."""
+    results = retrieve(query, chunks, chunk_embeddings, top_k=3)
+
+    top_score = results[0][1]
+    if top_score < SIMILARITY_THRESHOLD:
+        return "I don't have information about that in the provided documents."
+
+    context = "\n\n".join([f"[Score: {score:.2f}] {chunk}" for chunk, score in results])
     full_prompt = f"{SYSTEM_PROMPT}\n\nContext:\n{context}\n\nQuestion: {query}"
     response = client.models.generate_content(
         model="gemini-flash-latest",
@@ -37,3 +43,8 @@ if __name__ == "__main__":
 
     print(f"Question: {query}\n")
     print(f"Answer: {answer}")
+
+    query2 = "what's the weather like today?"
+    answer2 = generate_answer(query2, chunks, chunk_embeddings)
+    print(f"\nQuestion: {query2}\n")
+    print(f"Answer: {answer2}")
