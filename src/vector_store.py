@@ -39,6 +39,14 @@ if __name__ == "__main__":
     from loader import load_pdf
     from structure_chunker import chunk_by_structure
 
+def lookup_by_id(item_id: str) -> str:
+    """Look up a chunk by exact BUG- or TC- ID match, bypassing similarity search."""
+    all_docs = collection.get()
+    for doc in all_docs["documents"]:
+        if item_id.upper() in doc.upper():
+            return doc
+    return f"No item found matching '{item_id}'."
+
     text = load_pdf("data/sample.pdf")
     chunks = chunk_by_structure(text)
     count = index_chunks(chunks)
@@ -57,3 +65,5 @@ if __name__ == "__main__":
     print(f"\nIrrelevant query: {irrelevant_query}\n")
     for doc, score in irrelevant_results:
         print(f"Score: {score:.4f}")
+
+    
