@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from google import genai
-from retriever import retrieve
+from vector_store import query_chunks, index_chunks
 from structure_chunker import chunk_by_structure
 from loader import load_pdf
 from embedder import embed_chunks
@@ -15,11 +15,11 @@ provided context from release notes, bug logs, and test cases. If the answer isn
 in the context, say clearly: "I don't have information about that in the provided documents."
 Do not use outside knowledge. Cite which item (e.g. BUG-447, TC-108) your answer is based on."""
 
-SIMILARITY_THRESHOLD = 0.3
+SIMILARITY_THRESHOLD = 0.58
 
 def generate_answer(query: str, chunks: list[str], chunk_embeddings) -> str:
     """Retrieve relevant chunks and generate a grounded answer, or decline if nothing relevant is found."""
-    results = retrieve(query, chunks, chunk_embeddings, top_k=3)
+    results = query_chunks(query, top_k=3)
 
     top_score = results[0][1]
     if top_score < SIMILARITY_THRESHOLD:
@@ -37,6 +37,7 @@ if __name__ == "__main__":
     text = load_pdf("data/sample.pdf")
     chunks = chunk_by_structure(text)
     chunk_embeddings = embed_chunks(chunks)
+    index_chunks(chunks)
 
     query = "why did the availability filter test fail?"
     answer = generate_answer(query, chunks, chunk_embeddings)
